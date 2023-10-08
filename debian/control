@@ -1,0 +1,24 @@
+Source: alternc-metrics-basic
+Section: admin
+Priority: optional
+Maintainer: Benjamin Sonntag <benjamin@sonntag.fr>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.6.2
+
+Package: alternc-metrics-basic
+Architecture: all
+Pre-depends: alternc (>= 3.3.0) 
+Depends: php-cli
+         , ${misc:Depends}
+	 , alternc-metrics
+Description: Hosting management suite, basic metrics display
+ AlternC is a mutualized hosting software manager for Linux.
+ It allows you to manage your websites, domains, ftp, emails, aliases,
+ web statistics, mailing-lists etc.
+ .
+ This module for AlternC is able to keep history of various metrics
+ and show them in a nice and simple web page.
+ It depends on alternc-metrics for the metrics collection.
+ .
+ More information at https://www.alternc.com/
+Homepage: https://www.alternc.com/

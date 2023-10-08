@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+case "$1" in
+  configure)
+    echo "Installing alternc-metrics-basic sql DB"
+    /usr/lib/alternc/install_metricshistory.php
+    ;;
+esac
+
+#DEBHELPER#
