@@ -81,6 +81,14 @@ class metricshistory {
             echo date("Y-m-d H:i:s")." metricshistory: installed table metrics_history_aggregates\n";
         }
 
+        // if no user has the quota "metrics" enabled, enable it for everyone
+        $db->query("SELECT COUNT(*) AS ct FROM quotas WHERE name='metrics';");
+        $db->next_record();
+        if ($db->Record['ct']==0) {
+            echo date("Y-m-d H:i:s")." metricshistory: no user can access metrics, allowing it to everyone\n";
+            $db->query("INSERT INTO quotas (uid,name,total) SELECT uid,'metrics',1 FROM membres;");
+        }
+        
 } // install
 
 
