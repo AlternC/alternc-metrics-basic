@@ -30,22 +30,38 @@ class metricshistory {
         $db->query("CREATE DATABASE ".$L_MYSQL_DATABASE."_metrics");
         $mdb = new DB_Sql($L_MYSQL_DATABASE."_metrics", $L_MYSQL_HOST, $L_MYSQL_LOGIN, $L_MYSQL_PWD);
         
+        
+        $mdb->query("SHOW TABLES LIKE 'metrics';");
+        if (!$mdb->next_record()) {
+            $mdb->query("
+CREATE TABLE `metrics` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci 
+      ");
+            echo date("Y-m-d H:i:s")." metricshistory: installed table metrics\n";
+        }
+        
         $mdb->query("SHOW TABLES LIKE 'metrics_names';");
         if (!$mdb->next_record()) {
             $mdb->query("
-      CREATE TABLE `metrics_names` (
-      `id` bigint(20) unsigned AUTO_INCREMENT,
-      `name` varchar(128) NOT NULL,
-      `type` varchar(32) NOT NULL,
-      `account_id` bigint(20) unsigned DEFAULT NULL,
-      `domain_id` bigint(20) unsigned DEFAULT NULL,
-      `object_id` bigint(20) unsigned DEFAULT NULL,
-      `account` varchar(255) DEFAULT NULL,
-      `domain` varchar(255) DEFAULT NULL,
-      `object` varchar(255) DEFAULT NULL,
-      PRIMARY KEY (`id`),
-      UNIQUE metricid (`name`,`object_id`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `metrics_names` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `mid` bigint(20) unsigned,
+  `type` varchar(32) NOT NULL,
+  `account_id` bigint(20) unsigned DEFAULT NULL,
+  `domain_id` bigint(20) unsigned DEFAULT NULL,
+  `object_id` bigint(20) unsigned DEFAULT NULL,
+  `account` varchar(255) DEFAULT NULL,
+  `domain` varchar(255) DEFAULT NULL,
+  `object` varchar(255) DEFAULT NULL,
+  `lastuse` date DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `metricid` (`mid`,`object_id`),
+  KEY `lastuse` (`lastuse`)
+) ENGINE=InnoDB AUTO_INCREMENT=119888 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
       ");
             echo date("Y-m-d H:i:s")." metricshistory: installed table metrics_names\n";
         }
@@ -57,8 +73,10 @@ class metricshistory {
       `id` bigint(20) unsigned,
       `mdate` DATE,
       `value` bigint(20) unsigned,
+      `mid` bigint(20) unsigned,
       PRIMARY KEY (`mdate`,`id`),
-      KEY `id` (`id`)
+      KEY `id` (`id`),
+      KEY `mid` (`mid`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
       ");
             echo date("Y-m-d H:i:s")." metricshistory: installed table metrics_history_values\n";
@@ -74,8 +92,10 @@ class metricshistory {
       `sum` bigint(20) unsigned,
       `count` bigint(20) unsigned,
       `max` bigint(20) unsigned,
+      `mid` bigint(20) unsigned,
       PRIMARY KEY (`mdate`,`id`),
-      KEY `id` (`id`)
+      KEY `id` (`id`),
+      KEY `mid` (`mid`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
       ");
             echo date("Y-m-d H:i:s")." metricshistory: installed table metrics_history_aggregates\n";
@@ -103,17 +123,32 @@ class metricshistory {
         if ($this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: collecting metrics ...\n";
         $all = $m->get([],["domain","account","object"]);
         
+        if ($this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: filling metrics ...\n";
+        $sql=""; $count=0;
+        $names=[];
+        $this->mdb->query("SELECT * FROM metrics;");
+        while ($this->mdb->next_record()) {
+            $names[$this->mdb->Record["name"]]=$this->mdb->Record["id"];
+        }
+        foreach($all as $one) {
+            if (!isset($names[$one["name"]])) {
+                $sql="INSERT INTO metrics SET name='".addslashes($one["name"])."'; ";
+                $this->mdb->query($sql);
+                $names[$one["name"]]=$this->mdb->lastid();
+            }
+        }
+        
         if ($this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: filling metrics_names ...\n";
         $sql=""; $count=0;
         foreach($all as $one) {
             if (!$sql || strlen($sql)>1048576) { // should be a bit less than max_packet_size for MySQL ...
                 if ($sql && $this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: collected $count metric names\n";
                 $this->mdb->query($sql);
-                $sql="INSERT IGNORE INTO metrics_names (name,type,account_id,domain_id,object_id,account,domain,object) VALUES ";
+                $sql="INSERT IGNORE INTO metrics_names (mid,type,account_id,domain_id,object_id,account,domain,object) VALUES ";
                 $first=true;
             }
             if (!$first) $sql.=",";
-            $sql.=" ('".addslashes($one["name"])."','".addslashes($one["type"])."', ".intval($one["account_id"]).",".intval($one["domain_id"]).",".intval($one["object_id"]).", '".addslashes($one["account"])."','".addslashes($one["domain"])."','".addslashes($one["object"])."')";
+            $sql.=" (".intval($names[$one["name"]]).",'".addslashes($one["type"])."', ".intval($one["account_id"]).",".intval($one["domain_id"]).",".intval($one["object_id"]).", '".addslashes($one["account"])."','".addslashes($one["domain"])."','".addslashes($one["object"])."')";
             $first=false;
             $count++;
         }
@@ -128,7 +163,7 @@ class metricshistory {
             if (!$sql || strlen($sql)>1048576) { // should be a bit less than max_packet_size for MySQL ...
                 if ($sql && $this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: collected $count metric values\n";
                 $this->mdb->query($sql);
-                $sql="INSERT INTO metrics_history_values (id,mdate,value) VALUES ";
+                $sql="INSERT INTO metrics_history_values (id,mdate,value,mid) VALUES ";
                 $first=true;
             }
             if ($one["object_id"]) {
@@ -136,10 +171,10 @@ class metricshistory {
             } else {
                 $oin="";
             }
-            $this->mdb->query("SELECT id FROM metrics_names WHERE name='".addslashes($one["name"])."' $oin;");
+            $this->mdb->query("SELECT id FROM metrics_names WHERE mid=".intval($names[$one["name"]])." $oin;");
             if ($this->mdb->next_record()) {
                 if (!$first) $sql.=",";
-                $sql.=" (".intval($this->mdb->Record["id"]).",'$date', ".$one["value"].")";
+                $sql.=" (".intval($this->mdb->Record["id"]).",'$date', ".$one["value"].",".intval($names[$one["name"]]).")";
                 $first=false;
                 $count++;
             } else {
@@ -174,8 +209,8 @@ class metricshistory {
 
         // compute aggregate for last month, using SQL power \o/
         $this->mdb->query("
-  INSERT INTO metrics_history_aggregates (`id`,`mdate`,`min`,`sum`,`count`,`max`) 
-  SELECT id, '$startdate', min(value), sum(value),count(*), max(value) FROM metrics_history_values 
+  INSERT INTO metrics_history_aggregates (`id`,`mdate`,`min`,`sum`,`count`,`max`,`mid`) 
+  SELECT id, '$startdate', min(value), sum(value),count(*), max(value), mid FROM metrics_history_values 
   WHERE mdate BETWEEN '$startdate' AND '$enddate' GROUP BY id;
 ");
         $aff=$this->mdb->affected_rows();

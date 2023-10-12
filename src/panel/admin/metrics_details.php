@@ -19,7 +19,7 @@
 
  To read the license please visit http://www.gnu.org/copyleft/gpl.html
  ----------------------------------------------------------------------
- Purpose of file: Show the list of available metrics to users
+ Purpose of file: Show informations on a metric for a user or an admin
  ----------------------------------------------------------------------
 */
 
@@ -33,26 +33,11 @@ if (!$quota->cancreate("metrics")) {
 include_once("head.php");
 
 ?>
-<h3><?php __("Available metrics for your account"); ?></h3>
+<h3><?php __("Showing a metric"); ?></h3>
 <hr id="topbar"/>
 <br />
  <?php 
     echo $msg->msg_html_all();
-
-/*
-if ($admin->enabled) {
-?>
- <h3><?php __("Metrics for administrators"); ?></h3>
-<ul>
- <li class="lst"><a href="metrics_adm.php"><?php __("General server statistics"); ?></a></li>
-</ul>
- <h3><?php __("Metrics for your account"); ?></h3>
-<?php } ?>
-<ul>
- <li class="lst"><a href="metrics_my.php"><?php __("General statistics for my account"); ?></a></li>
-</ul>
-<?php
-*/
 
 require_once(__DIR__."/../class/metricshistory.php");
 require_once(__DIR__."/../class/metrics.php");
@@ -61,23 +46,42 @@ $m=new metrics();
 
 $all = $m->info();
 $modules=["dom" => "Domain & hosting", "mail" => "Email", "sympa" => "Sympa mailling lists", "mysql" => "MySQL databases" ];
-ksort($all);
-$last="";
-$first=true;
 
-foreach($all as $one) {
-    list($cat)=explode("_",$one["name"],2);
-    if ($cat!=$last) {
-        if (!$first) echo "</ul>";
-        $last=$cat;
-        echo "<h3>".$modules[$cat]."</h3>";
-        echo "<ul id=\"adm_panel\">";
-    }
-    echo "<li class=\"lst\"><a href=\"metrics_details.php?m=".$one["name"]."\">"._($one["description"])."</a></li>";
-    $first=false;
-}
-echo "</ul>";
+$metric=trim(strtolower($_GET["m"]));
+
+// get the metric ids & cardinality 
+// the default = get the LAST dated value and get the top 20 by descreasing value.
+$top = $metrics->get_top($metric,100);
+
+// TODO : show units (Kb/Mb/Gb ?) 
+// show proper domains for subdomains-metrics
 
 ?>
+<h3><?php 
+$all = $m->info();
+foreach($all as $one) if ($one["name"]==$metric) echo $one["description"]; 
+ ?></h3>
+
+        <table class="tlist" style="clear:both;">
+            <tr>
+                <th></th>
+                <th><?php __("Account"); ?></th>
+                <th><?php __("Domain"); ?></th>
+                <th><?php __("Object"); ?></th>
+                <th><?php __("Value"); ?></th>
+            </tr>
+<?php 
+$i=1;
+foreach($top["data"] as $one) {
+?>
+<tr class="lst<?php echo $lst; $lst=3-$lst;?>">
+    <td><?php echo $i++; ?></td>
+    <td><?php echo $one["account"]; ?></td>
+    <td><?php echo $one["domain"]; ?></td>
+    <td><?php echo $one["object"]; ?></td>
+    <td><?php echo $one["value"]; ?></td>
+</tr>
+<?php } ?>
+</table>
 
 <?php include_once("foot.php"); ?>
