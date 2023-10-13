@@ -60,20 +60,20 @@ $mh=new metricshistory();
 $m=new metrics();
 
 $all = $m->info();
-$modules=["dom" => "Domain & hosting", "mail" => "Email", "sympa" => "Sympa mailling lists", "mysql" => "MySQL databases" ];
+$modules = $m->modules(); 
 ksort($all);
 $last="";
 $first=true;
 
-foreach($all as $one) {
-    list($cat)=explode("_",$one["name"],2);
+foreach($all as $name => $attr) {
+    list($cat)=explode("_",$name,2);
     if ($cat!=$last) {
         if (!$first) echo "</ul>";
         $last=$cat;
         echo "<h3>".$modules[$cat]."</h3>";
         echo "<ul id=\"adm_panel\">";
     }
-    echo "<li class=\"lst\"><a href=\"metrics_details.php?m=".$one["name"]."\">"._($one["description"])."</a></li>";
+    echo "<li class=\"lst\"><a href=\"metrics_details.php?m=".$name."\">"._($attr["description"])."</a></li>";
     $first=false;
 }
 echo "</ul>";

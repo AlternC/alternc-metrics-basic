@@ -45,9 +45,9 @@ $mh=new metricshistory();
 $m=new metrics();
 
 $all = $m->info();
-$modules=["dom" => "Domain & hosting", "mail" => "Email", "sympa" => "Sympa mailling lists", "mysql" => "MySQL databases" ];
+$modules = $m->modules();
 
-$metric=trim(strtolower($_GET["m"]));
+$metric = trim(strtolower($_GET["m"]));
 
 // get the metric ids & cardinality 
 // the default = get the LAST dated value and get the top 20 by descreasing value.
@@ -59,7 +59,7 @@ $top = $metrics->get_top($metric,100);
 ?>
 <h3><?php 
 $all = $m->info();
-foreach($all as $one) if ($one["name"]==$metric) echo $one["description"]; 
+foreach($all as $name=>$attr) if ($name==$metric) echo $attr["description"]; 
  ?></h3>
 
         <table class="tlist" style="clear:both;">
