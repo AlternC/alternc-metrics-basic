@@ -165,10 +165,10 @@ CREATE TABLE `metrics_names` (
                 $sql="INSERT INTO metrics_history_values (id,mdate,value,mid) VALUES ";
                 $first=true;
             }
-            if ($one["object_id"]) {
+            if ($one["object_id"]) { // we search for a metric by object
                 $oin="AND object_id=".intval($one["object_id"]);
-            } else {
-                $oin="";
+            } else { // if there is no object, it may be by domain or account, so we match those (slower) 
+                $oin="AND domain_id=".intval($one["domain_id"])." AND account_id=".intval($one["account_id"]);
             }
             $this->mdb->query("SELECT id FROM metrics_names WHERE mid=".intval($names[$one["name"]])." $oin;");
             if ($this->mdb->next_record()) {
@@ -181,7 +181,9 @@ CREATE TABLE `metrics_names` (
                 echo str_replace("\n"," ",print_r($one,true))."\n";
             }
         }
-        if (!$first) $this->mdb->query($sql);
+        if (!$first) { 
+            $this->mdb->query($sql);
+        }
 
     }
 

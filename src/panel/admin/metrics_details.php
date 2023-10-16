@@ -59,8 +59,15 @@ $top = $metrics->get_top($metric,100);
 ?>
 <h3><?php 
 $all = $m->info();
-foreach($all as $name=>$attr) if ($name==$metric) echo $attr["description"]; 
+foreach($all as $name=>$attr) 
+    if ($name==$metric) { echo $attr["description"]; 
  ?></h3>
+<p><?php
+        printf(_("Metric dated %s"),$top["date"]); 
+        $attrs=$attr;
+}
+
+?></p>
 
         <table class="tlist" style="clear:both;">
             <tr>
@@ -79,7 +86,14 @@ foreach($top["data"] as $one) {
     <td><?php echo $one["account"]; ?></td>
     <td><?php echo $one["domain"]; ?></td>
     <td><?php echo $one["object"]; ?></td>
-    <td><?php echo $one["value"]; ?></td>
+    <td><?php 
+if ($attrs["unit"]=="bytes") {
+    echo format_size($one["value"]);
+} else {
+    echo $one["value"]; 
+}
+
+?></td>
 </tr>
 <?php } ?>
 </table>
