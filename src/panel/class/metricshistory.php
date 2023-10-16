@@ -50,7 +50,6 @@ CREATE TABLE `metrics` (
 CREATE TABLE `metrics_names` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `mid` bigint(20) unsigned,
-  `type` varchar(32) NOT NULL,
   `account_id` bigint(20) unsigned DEFAULT NULL,
   `domain_id` bigint(20) unsigned DEFAULT NULL,
   `object_id` bigint(20) unsigned DEFAULT NULL,
@@ -144,11 +143,11 @@ CREATE TABLE `metrics_names` (
             if (!$sql || strlen($sql)>1048576) { // should be a bit less than max_packet_size for MySQL ...
                 if ($sql && $this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: collected $count metric names\n";
                 $this->mdb->query($sql);
-                $sql="INSERT IGNORE INTO metrics_names (mid,type,account_id,domain_id,object_id,account,domain,object) VALUES ";
+                $sql="INSERT IGNORE INTO metrics_names (mid,account_id,domain_id,object_id,account,domain,object) VALUES ";
                 $first=true;
             }
             if (!$first) $sql.=",";
-            $sql.=" (".intval($names[$one["name"]]).",'".addslashes($one["type"])."', ".intval($one["account_id"]).",".intval($one["domain_id"]).",".intval($one["object_id"]).", '".addslashes($one["account"])."','".addslashes($one["domain"])."','".addslashes($one["object"])."')";
+            $sql.=" (".intval($names[$one["name"]]).", ".intval($one["account_id"]).",".intval($one["domain_id"]).",".intval($one["object_id"]).", '".addslashes($one["account"])."','".addslashes($one["domain"])."','".addslashes($one["object"])."')";
             $first=false;
             $count++;
         }
