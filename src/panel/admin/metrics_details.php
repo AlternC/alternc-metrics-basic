@@ -48,10 +48,14 @@ $all = $m->info();
 $modules = $m->modules();
 
 $metric = trim(strtolower($_GET["m"]));
+$limit = trim(strtolower($_GET["limit"]));
+if (empty($limit)) {
+       $limit = 100;
+}
 
 // get the metric ids & cardinality 
 // the default = get the LAST dated value and get the top 20 by descreasing value.
-$top = $metrics->get_top($metric,100);
+$top = $metrics->get_top($metric,$limit);
 
 // TODO : show units (Kb/Mb/Gb ?) 
 // show proper domains for subdomains-metrics

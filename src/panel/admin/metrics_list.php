@@ -73,7 +73,7 @@ foreach($all as $name => $attr) {
         echo "<h3>".$modules[$cat]."</h3>";
         echo "<ul id=\"adm_panel\">";
     }
-    echo "<li class=\"lst\"><a href=\"metrics_details.php?m=".$name."\">"._($attr["description"])."</a></li>";
+    echo "<li class=\"lst\"><a href=\"metrics_details.php?m=".$name."&limit=100000\">"._($attr["description"])."</a></li>";
     $first=false;
 }
 echo "</ul>";
