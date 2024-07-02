@@ -59,6 +59,12 @@ require_once(__DIR__."/../class/metrics.php");
 $mh=new metricshistory();
 $m=new metrics();
 
+/* example of getting ONE metric by name, filtering by domains, dereferencing everything:
+echo "<pre>";
+$test = $m->get(["names" => ["dom_subdomain_count"] ],["object", "domain", "account"]);
+ print_r($test); echo "</pre>";
+*/
+
 $all = $m->info();
 $modules = $m->modules(); 
 ksort($all);
