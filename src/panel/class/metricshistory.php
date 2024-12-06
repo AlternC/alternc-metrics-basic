@@ -162,7 +162,7 @@ CREATE TABLE `metrics_names` (
             if (!$sql || strlen($sql)>1048576) { // should be a bit less than max_packet_size for MySQL ...
                 if ($sql && $this->conf["debug"]) echo date("Y-m-d H:i:s")." metricshistory: collected $count metric values\n";
                 $this->mdb->query($sql);
-                $sql="INSERT INTO metrics_history_values (id,mdate,value,mid) VALUES ";
+                $sql="INSERT IGNORE INTO metrics_history_values (id,mdate,value,mid) VALUES ";
                 $first=true;
             }
             if ($one["object_id"]) { // we search for a metric by object
